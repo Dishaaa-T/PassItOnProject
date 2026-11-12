@@ -1,0 +1,38 @@
+# PassItOn setup guide (Windows)
+#
+# Python / pip:
+#   There are no Python dependencies for this project. Do not pip install anything.
+#   Running `py -m pip install -r requirements.txt` will install nothing because
+#   this file contains setup notes only.
+#
+# Install these separately before running the app:
+#   1. Node.js LTS (npm is included with Node.js).
+#   2. MongoDB Community Server running locally, OR a MongoDB Atlas database.
+#   3. Visual Studio Code (already installed, per the setup requirement).
+#
+# Check Node.js and npm in a new VS Code terminal:
+#   node --version - v22.22.3
+#   npm --version   - 11.6.4  
+#
+# Install and run the backend in one terminal:
+#   cd backend
+#   npm install
+#   npm run dev
+#
+# The backend defaults to a local MongoDB database at:
+#   mongodb://127.0.0.1:27017/passiton
+# For MongoDB Atlas or another database, create backend\.env and set:
+#   MONGO_URI= mongodb+srv://toparedisha_db_user:<db_password>@cluster0.x1sww7p.mongodb.net/passiton?retryWrites=true&w=majority
+#   JWT_SECRET=<a long, random secret>
+# MongoDB must be running / reachable before starting the backend.
+#
+# Install and run the frontend in a second terminal from the project root:
+#   cd frontend
+#   npm install
+#   npm run dev
+#
+# Open the local URL printed by Vite (normally http://localhost:5173).
+
+# frontend\.env can be created to override the default Vite environment variables:
+# VITE_CLOUDINARY_CLOUD_NAME=l5iencwl
+# VITE_CLOUDINARY_UPLOAD_PRESET=passiton_images
