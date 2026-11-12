@@ -4,6 +4,10 @@ import { Tag, FileText, IndianRupee, Image as ImageIcon, Leaf, ArrowRight, Check
 import { CATEGORIES, CONDITIONS } from '@/types';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import {
+  getSustainabilityScore,
+  getCO2Saved,
+} from '@/lib/sustainability';
 
 export default function SellPage() {
   const { user } = useAuth();
@@ -13,11 +17,17 @@ export default function SellPage() {
   const [category, setCategory] = useState('Clothing');
   const [condition, setCondition] = useState('Good');
   const [price, setPrice] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  // const [imageUrl, setImageUrl] = useState('');
+  // const [images, setImages] = useState([]);
   const [images, setImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [location, setLocation] = useState(user?.location || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const sustainabilityPreview =
+  getSustainabilityScore(condition);
+const co2Preview =
+  getCO2Saved(sustainabilityPreview);
 
   if (!user) {
     return (
@@ -47,6 +57,78 @@ export default function SellPage() {
     setImages(images.filter((_, i) => i !== idx));
   };
 
+  const uploadToCloudinary = async (file) => {
+  const formData = new FormData();
+
+  formData.append('file', file);
+  formData.append(
+    'upload_preset',
+    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+  );
+
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: 'POST',
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to upload image');
+  }
+
+  const data = await response.json();
+
+  return data.secure_url;
+};
+
+const handleImageChange = async (e) => {
+  const files = Array.from(e.target.files || []);
+
+  if (files.length === 0) return;
+
+  if (images.length + files.length > 5) {
+    setError('You can upload a maximum of 5 images.');
+    return;
+  }
+
+  setError('');
+  setUploadingImages(true);
+
+  try {
+    const uploadedUrls = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        throw new Error(`${file.name} is not an image.`);
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error(`${file.name} is larger than 5MB.`);
+      }
+
+      const url = await uploadToCloudinary(file);
+      uploadedUrls.push(url);
+    }
+
+    setImages((prev) => [...prev, ...uploadedUrls]);
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Failed to upload image'
+    );
+  } finally {
+    setUploadingImages(false);
+
+    // Allows selecting the same file again
+    e.target.value = '';
+  }
+};
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -75,7 +157,7 @@ export default function SellPage() {
     }
   };
 
-  const sustainabilityPreview = { New: 30, 'Like New': 70, Good: 85, Fair: 95 }[condition];
+  // const sustainabilityPreview = { New: 30, 'Like New': 70, Good: 85, Fair: 95 }[condition];
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -137,13 +219,42 @@ export default function SellPage() {
         </div>
 
         {/* Sustainability preview */}
-        <div className="bg-emerald-50 rounded-xl p-4 flex items-center gap-3">
+        {/* <div className="bg-emerald-50 rounded-xl p-4 flex items-center gap-3">
           <Leaf className="w-5 h-5 text-emerald-600" />
           <div className="flex-1">
             <span className="text-sm font-semibold text-emerald-700">Sustainability Score: {sustainabilityPreview}/100</span>
             <p className="text-xs text-emerald-600 mt-0.5">Score is based on item condition — the more worn, the more sustainable.</p>
           </div>
-        </div>
+        </div> */}
+        <div className="bg-emerald-50 rounded-xl p-4">
+  <div className="flex items-center gap-3">
+    <Leaf className="w-5 h-5 text-emerald-600" />
+
+    <div className="flex-1">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-emerald-700">
+          Sustainability Score
+        </span>
+
+        <span className="text-sm font-bold text-emerald-700">
+          {sustainabilityPreview}/100
+        </span>
+      </div>
+
+      <div className="w-full h-2 bg-emerald-200 rounded-full mt-2 overflow-hidden">
+        <div
+          className="h-full bg-emerald-600 rounded-full"
+          style={{ width: `${sustainabilityPreview}%` }}
+        />
+      </div>
+
+      <p className="text-xs text-emerald-600 mt-2">
+        Estimated impact: saves approximately{' '}
+        {co2Preview.toFixed(1)}kg CO2 compared to buying new.
+      </p>
+    </div>
+  </div>
+</div>
 
         {/* Description */}
         <div>
@@ -193,7 +304,7 @@ export default function SellPage() {
         </div>
 
         {/* Images */}
-        <div>
+        {/* <div>
           <label className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-2">
             <ImageIcon className="w-4 h-4 text-emerald-600" />
             Images (up to 5)
@@ -236,7 +347,70 @@ export default function SellPage() {
               ))}
             </div>
           )}
+        </div> */}
+
+        {/* Images */}
+<div>
+  <label className="flex items-center gap-2 text-sm font-semibold text-stone-700 mb-2">
+    <ImageIcon className="w-4 h-4 text-emerald-600" />
+    Images (up to 5)
+  </label>
+
+  <div className="border-2 border-dashed border-stone-200 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
+    <ImageIcon className="w-10 h-10 mx-auto mb-3 text-stone-400" />
+
+    <p className="text-sm font-medium text-stone-700">
+      Add photos of your item
+    </p>
+
+    <p className="text-xs text-stone-500 mt-1 mb-4">
+      PNG, JPG or WEBP · Maximum 5 images · 5MB each
+    </p>
+
+    <label className="inline-flex items-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl cursor-pointer transition-colors">
+      {uploadingImages ? 'Uploading...' : 'Choose Images'}
+
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        onChange={handleImageChange}
+        disabled={uploadingImages || images.length >= 5}
+        className="hidden"
+      />
+    </label>
+
+    <p className="text-xs text-stone-400 mt-3">
+      {images.length}/5 images added
+    </p>
+  </div>
+
+  {images.length > 0 && (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+      {images.map((img, i) => (
+        <div
+          key={img}
+          className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group"
+        >
+          <img
+            src={img}
+            alt={`Product ${i + 1}`}
+            className="w-full h-full object-cover"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeImage(i)}
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium"
+          >
+            Remove
+          </button>
         </div>
+      ))}
+    </div>
+  )}
+</div>
+
 
         {/* Submit */}
         <div className="flex items-center gap-3 pt-2">

@@ -7,7 +7,7 @@ import {
   Plus,
   Edit2,
   Trash2,
-  DollarSign,
+  IndianRupee,
   Leaf,
   Clock,
   CheckCircle,
@@ -17,6 +17,9 @@ import {
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import EmptyState from '@/components/EmptyState';
+import { getProductCO2Saved } from '@/lib/sustainability';
+
+
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -26,6 +29,26 @@ export default function DashboardPage() {
   const [mySales, setMySales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalListings: 0, activeListings: 0 });
+
+  const completedPurchases = myOrders.filter(
+  (order) => order.status === 'completed'
+);
+
+const completedSales = mySales.filter(
+  (order) => order.status === 'completed'
+);
+
+const purchasedCO2 = completedPurchases.reduce(
+  (sum, order) => sum + getProductCO2Saved(order.product),
+  0
+);
+
+const soldCO2 = completedSales.reduce(
+  (sum, order) => sum + getProductCO2Saved(order.product),
+  0
+);
+
+const totalCO2Impact = purchasedCO2 + soldCO2;
 
   useEffect(() => {
     Promise.all([
@@ -60,6 +83,45 @@ export default function DashboardPage() {
       alert(err instanceof Error ? err.message : 'Failed to update order');
     }
   };
+
+  const handleBuyerCancel = async (orderId) => {
+  if (!confirm('Are you sure you want to cancel this order?')) {
+    return;
+  }
+
+  try {
+    const updated = await api.updateOrderStatus(orderId, 'cancelled');
+
+    setMyOrders((orders) =>
+      orders.map((o) => (o._id === orderId ? updated : o))
+    );
+  } catch (err) {
+    alert(
+      err instanceof Error
+        ? err.message
+        : 'Failed to cancel order'
+    );
+  }
+};
+
+const getStatusOptions = (status) => {
+  switch (status) {
+    case 'paid':
+      return ['paid', 'shipped', 'cancelled'];
+
+    case 'shipped':
+      return ['shipped', 'completed'];
+
+    case 'completed':
+      return ['completed'];
+
+    case 'cancelled':
+      return ['cancelled'];
+
+    default:
+      return [status];
+  }
+};
 
   if (!user) {
     return (
@@ -130,7 +192,7 @@ export default function DashboardPage() {
                   { icon: <Package className="w-5 h-5" />, label: 'Active Listings', value: stats.activeListings, bg: 'bg-emerald-100', text: 'text-emerald-600' },
                   { icon: <ShoppingBag className="w-5 h-5" />, label: 'Items Bought', value: myOrders.length, bg: 'bg-blue-100', text: 'text-blue-600' },
                   { icon: <TrendingUp className="w-5 h-5" />, label: 'Items Sold', value: mySales.length, bg: 'bg-amber-100', text: 'text-amber-600' },
-                  { icon: <DollarSign className="w-5 h-5" />, label: 'Earnings', value: `$${totalEarnings.toFixed(0)}`, bg: 'bg-emerald-100', text: 'text-emerald-600' },
+                  { icon: <IndianRupee className="w-5 h-5" />, label: 'Earnings', value: ` ₹${totalEarnings.toFixed(0)}`, bg: 'bg-emerald-100', text: 'text-emerald-600' },
                 ].map((s) => (
                   <div key={s.label} className="bg-white rounded-2xl border border-stone-200 p-5">
                     <div className={`w-10 h-10 rounded-xl ${s.bg} ${s.text} flex items-center justify-center mb-3`}>
@@ -142,7 +204,7 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div className="bg-emerald-50 rounded-2xl p-6 flex items-center gap-4">
+              {/* <div className="bg-emerald-50 rounded-2xl p-6 flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center">
                   <Leaf className="w-7 h-7 text-white" />
                 </div>
@@ -152,7 +214,26 @@ export default function DashboardPage() {
                     You've helped keep {myProducts.length + myOrders.length} items in circulation and saved approximately {((myProducts.length + myOrders.length) * 12.5).toFixed(1)}kg of CO2.
                   </p>
                 </div>
-              </div>
+              </div> */}
+
+              <div className="bg-emerald-50 rounded-2xl p-6 flex items-center gap-4">
+  <div className="w-14 h-14 rounded-2xl bg-emerald-600 flex items-center justify-center">
+    <Leaf className="w-7 h-7 text-white" />
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-emerald-800">
+      Your sustainability impact
+    </h3>
+
+    <p className="text-sm text-emerald-700 mt-1">
+      You've helped keep{' '}
+      {completedPurchases.length + completedSales.length}{' '}
+      items in circulation and saved approximately{' '}
+      {totalCO2Impact.toFixed(1)}kg of CO2.
+    </p>
+  </div>
+</div>
 
               <div className="bg-white rounded-2xl border border-stone-200 p-6">
                 <h3 className="font-semibold text-stone-800 mb-4">Recent activity</h3>
@@ -167,7 +248,7 @@ export default function DashboardPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-stone-700 truncate">{order.product.title}</div>
-                          <div className="text-xs text-stone-400">${order.price} · {order.status}</div>
+                          <div className="text-xs text-stone-400"> ₹{order.price} · {order.status}</div>
                         </div>
                       </div>
                     ))}
@@ -206,7 +287,7 @@ export default function DashboardPage() {
                           {p.title}
                         </Link>
                         <div className="text-sm text-stone-500">
-                          ${p.price} · {p.category} · {p.condition}
+                           ₹{p.price} · {p.category} · {p.condition}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -252,13 +333,31 @@ export default function DashboardPage() {
                           {o.product.title}
                         </Link>
                         <div className="text-sm text-stone-500">
-                          ${o.price} · from {o.seller.name}
+                           ₹{o.price} · from {o.seller.name}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-2">
                         {statusIcon(o.status)}
                         <span className="text-sm font-medium text-stone-600 capitalize">{o.status}</span>
-                      </div>
+                      </div> */}
+                      <div className="flex items-center gap-3">
+  {o.status === 'paid' ? (
+    <button
+      type="button"
+      onClick={() => handleBuyerCancel(o._id)}
+      className="px-3 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+    >
+      Cancel Order
+    </button>
+  ) : (
+    <div className="flex items-center gap-2">
+      {statusIcon(o.status)}
+      <span className="text-sm font-medium text-stone-600 capitalize">
+        {o.status}
+      </span>
+    </div>
+  )}
+</div>
                     </div>
                   ))}
                 </div>
@@ -289,10 +388,10 @@ export default function DashboardPage() {
                           {o.product.title}
                         </Link>
                         <div className="text-sm text-stone-500">
-                          ${o.price} · buyer: {o.buyer.name}
+                           ₹{o.price} · buyer: {o.buyer.name}
                         </div>
                       </div>
-                      <select
+                      {/* <select
                         value={o.status}
                         onChange={(e) => handleStatusUpdate(o._id, e.target.value)}
                         className="px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
@@ -301,7 +400,19 @@ export default function DashboardPage() {
                         <option value="shipped">Shipped</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
-                      </select>
+                      </select> */}
+
+                      <select
+  value={o.status}
+  onChange={(e) => handleStatusUpdate(o._id, e.target.value)}
+  className="px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+>
+  {getStatusOptions(o.status).map((status) => (
+    <option key={status} value={status}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </option>
+  ))}
+</select>
                     </div>
                   ))}
                 </div>

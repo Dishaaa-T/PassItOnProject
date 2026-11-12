@@ -4,6 +4,7 @@ import { CheckCircle, Leaf, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
+import { getCartCO2Saved } from '@/lib/sustainability';
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
@@ -11,7 +12,11 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [orderCO2Saved, setOrderCO2Saved] = useState(0);
   const [error, setError] = useState('');
+
+  const co2Saved = getCartCO2Saved(items);
+
 
   const [address, setAddress] = useState({
     name: user?.name || '',
@@ -39,9 +44,12 @@ export default function CheckoutPage() {
         </p>
         <div className="bg-emerald-50 rounded-xl p-4 mb-6 flex items-center justify-center gap-2">
           <Leaf className="w-5 h-5 text-emerald-600" />
-          <span className="text-sm font-medium text-emerald-700">
+          {/* <span className="text-sm font-medium text-emerald-700">
             You saved ~{(items.length * 12.5).toFixed(1)}kg of CO2
-          </span>
+          </span> */}
+          <span className="text-sm font-medium text-emerald-700">
+  You saved ~{orderCO2Saved.toFixed(1)}kg of CO2
+</span>
         </div>
         <Link to="/dashboard" className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors">
           View My Orders
@@ -60,16 +68,31 @@ export default function CheckoutPage() {
     setError('');
     setProcessing(true);
 
+    // try {
+    //   for (const item of items) {
+    //     await api.createOrder({
+    //       productId: item.product._id,
+    //       shippingAddress: address,
+    //     });
+    //   }
+    //   clearCart();
+    //   setCompleted(true);
+    // }
+
     try {
-      for (const item of items) {
-        await api.createOrder({
-          productId: item.product._id,
-          shippingAddress: address,
-        });
-      }
-      clearCart();
-      setCompleted(true);
-    } catch (err) {
+  for (const item of items) {
+    await api.createOrder({
+      productId: item.product._id,
+      shippingAddress: address,
+    });
+  }
+
+  setOrderCO2Saved(co2Saved);
+
+  clearCart();
+  setCompleted(true);
+}
+     catch (err) {
       setError(err instanceof Error ? err.message : 'Checkout failed');
     } finally {
       setProcessing(false);
@@ -179,14 +202,14 @@ export default function CheckoutPage() {
                   <div className="text-sm font-medium text-stone-700 truncate">{item.product.title}</div>
                   <div className="text-xs text-stone-400">{item.product.sellerName}</div>
                 </div>
-                <div className="text-sm font-semibold text-stone-800">${item.product.price}</div>
+                <div className="text-sm font-semibold text-stone-800">₹{item.product.price}</div>
               </div>
             ))}
 
             <div className="border-t border-stone-200 pt-3 space-y-1 text-sm">
               <div className="flex justify-between text-stone-600">
                 <span>Subtotal</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₹{total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-stone-600">
                 <span>Shipping</span>
@@ -194,7 +217,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-lg font-bold text-stone-800 pt-1">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₹{total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -204,15 +227,29 @@ export default function CheckoutPage() {
             disabled={processing}
             className="w-full mt-4 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
           >
-            {processing ? 'Processing...' : `Place Order — $${total.toFixed(2)}`}
+            {processing ? 'Processing...' : `Place Order —  ₹${total.toFixed(2)}`}
           </button>
 
-          <div className="mt-4 bg-emerald-50 rounded-xl p-4 flex items-center gap-2">
+          {/* <div className="mt-4 bg-emerald-50 rounded-xl p-4 flex items-center gap-2">
             <Leaf className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <p className="text-xs text-emerald-700">
-              This order keeps {items.length} item{items.length > 1 ? 's' : ''} in circulation and saves approximately {(items.length * 12.5).toFixed(1)}kg of CO2 compared to buying new.
+              This order keeps {items.length} item{items.length > 1 ? 's' : ''} in circulation and saves approximately {(items.length * 2.5).toFixed(1)}kg of CO2 compared to buying new.
             </p>
-          </div>
+          </div> */}
+
+          <div className="mt-4 bg-emerald-50 rounded-xl p-4 flex items-center gap-2">
+  <Leaf className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+
+  <p className="text-xs text-emerald-700">
+    This order keeps {items.length} item
+    {items.length > 1 ? 's' : ''} in circulation and saves
+    approximately{' '}
+    <span className="font-semibold">
+      {co2Saved.toFixed(1)}kg of CO2
+    </span>{' '}
+    compared to buying new.
+  </p>
+</div>
         </div>
       </form>
     </div>

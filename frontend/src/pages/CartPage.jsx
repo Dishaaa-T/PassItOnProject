@@ -3,6 +3,8 @@ import { Trash2, ShoppingBag, Leaf, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import EmptyState from '@/components/EmptyState';
+import SustainabilityImpact from '@/components/SustainabilityImpact';
+import { getCartCO2Saved } from '@/lib/sustainability';
 
 export default function CartPage() {
   const { items, removeFromCart, total, clearCart } = useCart();
@@ -31,6 +33,8 @@ export default function CartPage() {
     }
     navigate('/checkout');
   };
+
+  const co2Saved = getCartCO2Saved(items);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -66,7 +70,7 @@ export default function CartPage() {
                 </div>
               </div>
               <div className="flex flex-col items-end justify-between">
-                <span className="text-lg font-bold text-stone-900">${item.product.price}</span>
+                <span className="text-lg font-bold text-stone-900">₹{item.product.price}</span>
                 <button
                   onClick={() => removeFromCart(item.product._id)}
                   className="p-2 text-stone-400 hover:text-red-600 transition-colors"
@@ -85,7 +89,7 @@ export default function CartPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-stone-600">
                 <span>Items ({items.length})</span>
-                <span>${total.toFixed(2)}</span>
+                <span> ₹{total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-stone-600">
                 <span>Shipping</span>
@@ -94,17 +98,28 @@ export default function CartPage() {
               <div className="border-t border-stone-200 pt-3 mt-3">
                 <div className="flex justify-between text-lg font-bold text-stone-800">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span> ₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
-
+{/* 
             <div className="mt-4 p-3 bg-emerald-50 rounded-lg flex items-center gap-2">
               <Leaf className="w-4 h-4 text-emerald-600" />
               <span className="text-xs text-emerald-700">
                 This purchase saves ~{(items.length * 12.5).toFixed(1)}kg CO2
               </span>
-            </div>
+            </div> */}
+
+            <div className="mt-4 p-3 bg-emerald-50 rounded-lg flex items-center gap-2">
+  <Leaf className="w-4 h-4 text-emerald-600" />
+
+  <span className="text-xs text-emerald-700">
+    This purchase saves approximately{' '}
+    <span className="font-semibold">
+      {co2Saved.toFixed(1)}kg CO2
+    </span>
+  </span>
+</div>
 
             <button
               onClick={handleCheckout}

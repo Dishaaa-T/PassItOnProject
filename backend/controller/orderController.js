@@ -63,23 +63,75 @@ export async function getMySales(req, res) {
   res.json(orders);
 }
 
+// export async function updateOrderStatus(req, res) {
+//   const order = await Order.findById(req.params.id);
+
+//   if (!order) {
+//     res.status(404);
+//     throw new Error('Order not found');
+//   }
+
+//   const isSeller = order.seller.toString() === req.user._id.toString();
+//   const isBuyer = order.buyer.toString() === req.user._id.toString();
+
+//   if (!isSeller && !isBuyer) {
+//     res.status(403);
+//     throw new Error('Not authorized to update this order');
+//   }
+
+//   const { status } = req.body;
+//   const validTransitions = {
+//     pending: ['paid', 'cancelled'],
+//     paid: ['shipped', 'cancelled'],
+//     shipped: ['completed'],
+//     completed: [],
+//     cancelled: [],
+//   };
+
+//   // if (!validTransitions[order.status].includes(status)) {
+//   //   res.status(400);
+//   //   throw new Error(`Cannot change status from ${order.status} to ${status}`);
+//   // }
+  
+//   if (!validTransitions[order.status].includes(status)) {
+//   return res.status(400).json({
+//     message: `Cannot change status from ${order.status} to ${status}`,
+//   });
+// }
+//   order.status = status;
+//   await order.save();
+
+//   const updated = await Order.findById(order._id)
+//     .populate('product', 'title images category price')
+//     .populate('seller', 'name')
+//     .populate('buyer', 'name');
+
+//   res.json(updated);
+// }
+
 export async function updateOrderStatus(req, res) {
   const order = await Order.findById(req.params.id);
 
   if (!order) {
-    res.status(404);
-    throw new Error('Order not found');
+    return res.status(404).json({
+      message: 'Order not found',
+    });
   }
 
-  const isSeller = order.seller.toString() === req.user._id.toString();
-  const isBuyer = order.buyer.toString() === req.user._id.toString();
+  const isSeller =
+    order.seller.toString() === req.user._id.toString();
+
+  const isBuyer =
+    order.buyer.toString() === req.user._id.toString();
 
   if (!isSeller && !isBuyer) {
-    res.status(403);
-    throw new Error('Not authorized to update this order');
+    return res.status(403).json({
+      message: 'Not authorized to update this order',
+    });
   }
 
   const { status } = req.body;
+
   const validTransitions = {
     pending: ['paid', 'cancelled'],
     paid: ['shipped', 'cancelled'],
@@ -88,18 +140,32 @@ export async function updateOrderStatus(req, res) {
     cancelled: [],
   };
 
-  if (!validTransitions[order.status].includes(status)) {
-    res.status(400);
-    throw new Error(`Cannot change status from ${order.status} to ${status}`);
+  // Invalid status transition
+  if (!validTransitions[order.status]?.includes(status)) {
+    return res.status(400).json({
+      message: `Cannot change status from ${order.status} to ${status}`,
+    });
   }
 
+  // order.status = status;
+  // await order.save();
+
   order.status = status;
-  await order.save();
+await order.save();
+
+if (status === 'cancelled') {
+  const product = await Product.findById(order.product);
+
+  if (product) {
+    product.isAvailable = true;
+    await product.save();
+  }
+}
 
   const updated = await Order.findById(order._id)
     .populate('product', 'title images category price')
     .populate('seller', 'name')
     .populate('buyer', 'name');
 
-  res.json(updated);
+  return res.json(updated);
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Leaf,
   MapPin,
@@ -8,12 +8,13 @@ import {
   Shield,
   Package,
   Star,
-} from 'lucide-react';
-import { api } from '@/lib/api';
-import { getMockProductById, getMockRelatedProducts } from '@/lib/mockData';
-import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
-import ProductCard from '@/components/ProductCard';
+} from "lucide-react";
+import { api } from "@/lib/api";
+import { getMockProductById, getMockRelatedProducts } from "@/lib/mockData";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import ProductCard from "@/components/ProductCard";
+import SustainabilityImpact from "@/components/SustainabilityImpact";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -49,7 +50,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     addToCart(product);
@@ -75,8 +76,13 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h2 className="text-2xl font-bold text-stone-800 mb-4">Product not found</h2>
-        <Link to="/browse" className="text-emerald-600 hover:text-emerald-700 font-medium">
+        <h2 className="text-2xl font-bold text-stone-800 mb-4">
+          Product not found
+        </h2>
+        <Link
+          to="/browse"
+          className="text-emerald-600 hover:text-emerald-700 font-medium"
+        >
           Back to browse
         </Link>
       </div>
@@ -118,10 +124,16 @@ export default function ProductDetailPage() {
                   key={i}
                   onClick={() => setActiveImage(i)}
                   className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-colors ${
-                    activeImage === i ? 'border-emerald-600' : 'border-stone-200'
+                    activeImage === i
+                      ? "border-emerald-600"
+                      : "border-stone-200"
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -145,14 +157,21 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          <h1 className="text-3xl font-bold text-stone-800 mb-3">{product.title}</h1>
-          <div className="text-3xl font-bold text-stone-900 mb-6">${product.price}</div>
+          <h1 className="text-3xl font-bold text-stone-800 mb-3">
+            {product.title}
+          </h1>
+          <div className="text-3xl font-bold text-stone-900 mb-6">
+            {" "}
+            ₹{product.price}
+          </div>
 
-          <p className="text-stone-600 leading-relaxed mb-6">{product.description}</p>
+          <p className="text-stone-600 leading-relaxed mb-6">
+            {product.description}
+          </p>
 
           {/* Sustainability score */}
           <div className="bg-emerald-50 rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
+            {/* <div className="flex items-center justify-between mb-2">
               <span className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
                 <Leaf className="w-4 h-4" />
                 Sustainability Score
@@ -160,16 +179,17 @@ export default function ProductDetailPage() {
               <span className="text-lg font-bold text-emerald-700">
                 {product.sustainabilityScore}/100
               </span>
-            </div>
-            <div className="w-full h-2 bg-emerald-200 rounded-full overflow-hidden">
+            </div> */}
+            {/* <div className="w-full h-2 bg-emerald-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-600 rounded-full transition-all"
                 style={{ width: `${product.sustainabilityScore}%` }}
               />
-            </div>
-            <p className="text-xs text-emerald-600 mt-2">
+            </div> */}
+            {/* <p className="text-xs text-emerald-600 mt-2">
               Buying this item saves approximately {(product.sustainabilityScore * 0.15).toFixed(1)}kg of CO2 vs buying new.
-            </p>
+            </p> */}
+            <SustainabilityImpact product={product} variant="score" />
           </div>
 
           {/* Seller info */}
@@ -178,7 +198,9 @@ export default function ProductDetailPage() {
               {product.seller.name.charAt(0)}
             </div>
             <div className="flex-1">
-              <div className="font-semibold text-stone-800">{product.seller.name}</div>
+              <div className="font-semibold text-stone-800">
+                {product.seller.name}
+              </div>
               {product.seller.location && (
                 <div className="flex items-center gap-1 text-sm text-stone-500">
                   <MapPin className="w-3 h-3" />
@@ -195,8 +217,11 @@ export default function ProductDetailPage() {
           {/* Actions */}
           {isOwner ? (
             <div className="bg-stone-100 rounded-xl p-4 text-center text-stone-600 text-sm">
-              This is your listing.{' '}
-              <Link to="/dashboard" className="text-emerald-600 font-medium hover:underline">
+              This is your listing.{" "}
+              <Link
+                to="/dashboard"
+                className="text-emerald-600 font-medium hover:underline"
+              >
                 Manage in dashboard
               </Link>
             </div>
@@ -207,21 +232,21 @@ export default function ProductDetailPage() {
                 disabled={!product.isAvailable}
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 font-semibold rounded-xl transition-all ${
                   added
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? "bg-emerald-100 text-emerald-700"
                     : product.isAvailable
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                    : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                      : "bg-stone-200 text-stone-400 cursor-not-allowed"
                 }`}
               >
                 {added ? (
-                  'Added to cart!'
+                  "Added to cart!"
                 ) : product.isAvailable ? (
                   <>
                     <ShoppingCart className="w-5 h-5" />
                     Add to Cart
                   </>
                 ) : (
-                  'Sold Out'
+                  "Sold Out"
                 )}
               </button>
               <Link
@@ -243,7 +268,9 @@ export default function ProductDetailPage() {
       {/* Related products */}
       {related.length > 0 && (
         <section className="mt-16">
-          <h2 className="text-2xl font-bold text-stone-800 mb-6">Similar items</h2>
+          <h2 className="text-2xl font-bold text-stone-800 mb-6">
+            Similar items
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {related.map((p) => (
               <ProductCard key={p._id} product={p} />
